@@ -12,7 +12,7 @@ class IngredientAdmin(admin.ModelAdmin):
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_filter = ('name', 'author', 'tag')
+    list_filter = ('name', 'author', 'tags')
 
 
 class IngredientWithAmountAdmin(admin.ModelAdmin):
