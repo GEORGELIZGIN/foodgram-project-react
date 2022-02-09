@@ -16,16 +16,37 @@ class Recipe(models.Model):
     image = models.ImageField()
     tags = models.ManyToManyField('Tag')
 
+    class Meta:
+        verbose_name = 'recipe'
+        verbose_name_plural = 'recipes'
+
+    def __str__(self):
+        return self.name
+
 
 class Ingredient(models.Model):
     name = models.CharField(max_length=200)
     measurement_unit = models.CharField(max_length=200)
+
+    class Meta:
+        verbose_name = 'ingredient'
+        verbose_name_plural = 'ingredients'
+ 
+    def __str__(self):
+        return self.name
 
 
 class Tag(models.Model):
     name = models.CharField(max_length=200)
     color = models.CharField(max_length=7, null=True)
     slug = models.SlugField(max_length=200, null=True)
+
+    class Meta:
+        verbose_name = 'tag'
+        verbose_name_plural = 'tags'
+   
+    def __str__(self):
+        return self.name
 
 
 class IngredientWithAmount(models.Model):

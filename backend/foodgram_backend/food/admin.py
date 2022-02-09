@@ -4,15 +4,15 @@ from . import models
 
 
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('name', 'id')
+    list_display = ('id', 'name')
 
 
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('name', 'id')
+    list_display = ('id', 'name')
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    pass
+    list_filter = ('name', 'author', 'tag')
 
 
 class IngredientWithAmountAdmin(admin.ModelAdmin):
