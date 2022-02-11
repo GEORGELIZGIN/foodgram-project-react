@@ -12,11 +12,15 @@ User = get_user_model()
 
 
 class SubscriptionViewSet(ReadOnlyModelViewSet):
+    permission_classes = (IsAuthenticated,)
     pagination_class = pagination.LimitOffsetPagination
     serializer_class = SubscriptionSerializer
 
     def get_queryset(self):
-        return [x.author for x in self.request.user.followings.all()]
+        self.request.user
+        return User.objects.filter(
+            id__in=self.request.user.followings.all().values_list(
+                'author__id', flat=True))
 
 
 @api_view(['POST', 'DELETE'])

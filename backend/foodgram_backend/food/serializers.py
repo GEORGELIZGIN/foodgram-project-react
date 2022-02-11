@@ -1,11 +1,10 @@
 from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
-from rest_framework import serializers
-from rest_framework import validators
+from rest_framework import serializers, validators
 
 from users.serializers import UserSerializer
 
-from .models import (Favourite, Ingredient, IngredientWithAmount, Recipe,
+from .models import (Favorite, Ingredient, IngredientWithAmount, Recipe,
                      ShoppingCart, Tag)
 
 
@@ -21,21 +20,40 @@ class IngredientSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit')
 
 
-class IngredientWithAmountSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source='ingredient.name')
-    measurement_unit = serializers.CharField(
-        source='ingredient.measurement_unit')
-    id = serializers.IntegerField(source='ingredient.id')
+class IngredientWithAmountSerializer(serializers.BaseSerializer):
 
-    class Meta:
-        model = IngredientWithAmount
-        fields = ('id', 'name', 'amount', 'measurement_unit')
+    def to_representation(self, instance):
+        serealized_object = IngredientSerializer(instance.ingredient).data
+        serealized_object.update({'amount': instance.amount})
+        return serealized_object
+
+    def to_internal_value(self, data):
+        amount = data.get('amount')
+        id = data.get('id')
+        try:
+            int(amount)
+        except ValueError:
+            raise serializers.ValidationError('amount must be positive int')
+        if int(amount) <= 0:
+            raise serializers.ValidationError('amount must be positive int')
+        if not amount:
+            raise serializers.ValidationError({
+                'amount': 'This field is required.'
+            })
+        if not id:
+            raise serializers.ValidationError({
+                'id': 'This field is required.'
+            })
+        return {
+            'id': id,
+            'amount': amount
+        }
 
 
 class RecipeSerializer(serializers.ModelSerializer):
     ingredients = IngredientWithAmountSerializer(many=True)
     tags = TagSerializer(many=True)
-    is_favourite = serializers.SerializerMethodField()
+    is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     author = UserSerializer()
 
@@ -43,30 +61,24 @@ class RecipeSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = '__all__'
 
-    def get_is_favourite(self, obj):
-        if self.context['request'].user.is_anonymous:
-            return False
-        favourit = Favourite.objects.filter(
+    def get_is_favorited(self, obj):
+        is_favorited = self.context.get('is_favorited')
+        if is_favorited is not None:
+            return is_favorited
+        return Favorite.objects.filter(
             user=self.context['request'].user,
-            favourite=obj)
-        if len(favourit) == 0:
-            return False
-        return True
+            favorite=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        if self.context['request'].user.is_anonymous:
-            return False
-        favourit = ShoppingCart.objects.filter(
+        is_in_shopping_cart = self.context.get('is_in_shopping_cart')
+        if is_in_shopping_cart is not None:
+            return is_in_shopping_cart
+        return ShoppingCart.objects.filter(
             user=self.context['request'].user,
-            cart=obj)
-        if len(favourit) == 0:
-            return False
-        return True
+            cart=obj).exists()
 
 
 class CreateIngredientSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(source='ingredient.id')
-
     class Meta:
         model = IngredientWithAmount
         fields = ('id', 'amount')
@@ -77,7 +89,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         many=True,
         slug_field='id',
         queryset=Tag.objects.all())
-    ingredients = CreateIngredientSerializer(many=True)
+    ingredients = IngredientWithAmountSerializer(many=True)
     image = Base64ImageField()
 
     class Meta:
@@ -88,7 +100,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'cooking_time', 'image')
 
     def create(self, validated_data):
-        print(validated_data)
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
         if not ingredients:
@@ -107,7 +118,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                 amount=ingr['amount'],
                 ingredient=get_object_or_404(
                     Ingredient,
-                    id=ingr['ingredient']['id'])
+                    id=ingr['id'])
             )
             recipe.ingredients.add(ingredient)
         return recipe
@@ -127,7 +138,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                     amount=ingr['amount'],
                     ingredient=get_object_or_404(
                         Ingredient,
-                        id=ingr['ingredient']['id'])
+                        id=ingr['id'])
                 )
                 instance.ingredients.add(ingredient)
 

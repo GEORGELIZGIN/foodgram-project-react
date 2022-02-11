@@ -1,40 +1,29 @@
 import csv
 
-import django_filters
+from django.db.models import Sum
 from django.http import HttpResponse
-from rest_framework import filters, pagination, status, viewsets
+from rest_framework import pagination, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Favourite, Ingredient, Recipe, ShoppingCart, Tag
+from .filters import CustomSearchFilter, RecipeFilter
+from .models import (Favorite, Ingredient, Recipe,
+                     ShoppingCart, Tag)
 from .permissions import RecipePermissions
-from .serializers import (
-    IngredientSerializer, RecipeCreateSerializer, RecipeSerializer,
-    TagSerializer, RecipePartSerializer,
-    RecipeCreateSerializer)
+from .serializers import (IngredientSerializer, RecipeCreateSerializer,
+                          RecipePartSerializer, RecipeSerializer,
+                          TagSerializer)
+
+CONTENT_TYPE = 'text/csv'
+HEADERS = {
+    'Content-Disposition': 'attachment; filename="somefilename.csv"'
+}
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-
-
-class CustomSearchFilter(filters.SearchFilter):
-    search_param = "name"
-
-
-class RecipeFilter(django_filters.FilterSet):
-    tags = django_filters.CharFilter(
-        field_name='tags__slug',
-        lookup_expr='contains')
-    author = django_filters.NumberFilter(
-        field_name='author__id',
-        lookup_expr='exact')
-
-    class Meta:
-        model = Recipe
-        fields = ['tags', 'author']
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
@@ -47,24 +36,71 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = pagination.LimitOffsetPagination
     permission_classes = (RecipePermissions,)
-    queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+
+    def get_queryset(self):
+
+        is_in_shopping_cart = self.request.query_params.get(
+            'is_in_shopping_cart')
+        is_favorited = self.request.query_params.get('is_favorited')
+
+        res = Recipe.objects.all()
+        user = self.request.user
+
+        if is_in_shopping_cart is not None:
+
+            if is_in_shopping_cart == '1':
+                if user.is_anonymous:
+                    return Recipe.objects.none()
+                if ShoppingCart.objects.filter(user=user).exists():
+                    res = res.intersection(user.shoppingcart.cart.all())
+                else:
+                    return Recipe.objects.none()
+
+            elif is_in_shopping_cart == '0':
+                if not user.is_anonymous:
+                    if ShoppingCart.objects.filter(user=user).exists():
+                        res = res.difference(user.shoppingcart.cart.all())
+
+        if is_favorited is not None:
+            if is_favorited == '1':
+                if user.is_anonymous:
+                    return Recipe.objects.none()
+                if Favorite.objects.filter(user=user).exists():
+                    res = res.intersection(user.favorite.favorite.all())
+                else:
+                    return Recipe.objects.none()
+            elif is_favorited == '0':
+                if not user.is_anonymous:
+                    if Favorite.objects.filter(user=user).exists():
+                        res = res.difference(user.favorite.favorite.all())
+        return res
+
     filterset_class = RecipeFilter
 
+    def _is_favorited_or_is_in_shopping_cart(self, request):
+
+        if request.user.is_anonymous:
+            is_favorited = False
+            is_in_shopping_cart = False
+            return {
+                'is_favorited': is_favorited,
+                'is_in_shopping_cart': is_in_shopping_cart
+            }
+        return {}
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update(self._is_favorited_or_is_in_shopping_cart(self.request))
+        return context
+
     def get_serializer_class(self):
-        if self.action == 'create' or self.action == 'update':
+        if self.action == 'create' or self.action == 'partial_update':
             return RecipeCreateSerializer
         return RecipeSerializer
 
-    def destroy(self, request, *args, **kwargs):
-        print(request.body)
-        print('aaaa')
-        print(self)
-        recipe = self.get_object()
-        print(recipe)
+    def perform_destroy(self, recipe):
         recipe.ingredients.all().delete()
-        self.perform_destroy(recipe)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        recipe.delete()
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -73,38 +109,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_shopping_list(request):
-    print(request.user)
     response = HttpResponse(
-        content_type='text/csv',
-        headers={
-            'Content-Disposition': 'attachment; filename="somefilename.csv"'},
-    )
-    shopping_cart = ShoppingCart.objects.filter(user=request.user).first()
-    if not shopping_cart:
+        content_type=CONTENT_TYPE,
+        headers=HEADERS,)
+    if not ShoppingCart.objects.filter(user=request.user).exists():
         return response
-    recipes = shopping_cart.cart.all()
-    dict_of_ingredients = {}
-    for recipe in recipes.all():
-        for ingredient_with_amount in recipe.ingredients.all():
-            if ingredient_with_amount.ingredient.name in dict_of_ingredients:
-                dict_of_ingredients[
-                    ingredient_with_amount.ingredient.name
-                ]['amount'] += ingredient_with_amount.amount
-            else:
-                dict_of_ingredients[ingredient_with_amount.ingredient.name] = {
-                    'amount': ingredient_with_amount.amount,
-                    'measurement_unit': (
-                        ingredient_with_amount.ingredient.measurement_unit),
-                }
+    recipeids = Recipe.shoppingcart_set.through.objects.filter(
+        shoppingcart__user=request.user).values_list('recipe', flat=True)
+    res = Recipe.ingredients.through.objects.filter(
+        recipe__id__in=recipeids).values(
+            'ingredientwithamount__ingredient__name',
+            'ingredientwithamount__ingredient__measurement_unit',).annotate(
+                sum=Sum('ingredientwithamount__amount'))
 
-    writer = csv.writer(response)
-    for ingredient_name in dict_of_ingredients:
-        writer.writerow(
-            [
-                ingredient_name,
-                dict_of_ingredients[ingredient_name]['amount'],
-                dict_of_ingredients[ingredient_name]['measurement_unit']
-            ])
+    writer = csv.DictWriter(response, fieldnames=res[0].keys())
+    writer.writerows(res)
 
     return response
 
@@ -116,10 +135,11 @@ def add_delete_recipe_shopping_list(request, id):
     if not recipe:
         return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
     if request.method == 'POST':
-        shopping_cart = ShoppingCart.objects.filter(user=request.user).first()
-        if not shopping_cart:
-            shopping_cart = ShoppingCart.objects.create(user=request.user)
-        if ShoppingCart.objects.filter(user=request.user, cart=recipe).first():
+        shopping_cart, _ = ShoppingCart.objects.get_or_create(
+            user=request.user)
+        if ShoppingCart.objects.filter(
+            user=request.user, cart=recipe
+        ).exists():
             return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
         shopping_cart.cart.add(recipe)
         return Response(
@@ -135,40 +155,38 @@ def add_delete_recipe_shopping_list(request, id):
     if not shopping_cart:
         return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
     shopping_cart.cart.remove(recipe)
-    if len(shopping_cart.cart.all()) == 0:
+    if not shopping_cart.cart.exists():
         shopping_cart.delete()
     return HttpResponse(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(['POST', 'DELETE'])
 @permission_classes([IsAuthenticated])
-def add_delete_favourite(request, id):
+def add_delete_favorite(request, id):
     recipe = Recipe.objects.filter(id=id).first()
     if not recipe:
         return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
     if request.method == 'POST':
-        favourite = Favourite.objects.filter(user=request.user).first()
-        if not favourite:
-            favourite = Favourite.objects.create(user=request.user)
-        if Favourite.objects.filter(
+        if Favorite.objects.filter(
             user=request.user,
-            favourite=recipe
+            favorite=recipe
         ).first():
             return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
-        favourite.favourite.add(recipe)
+        favorite, _ = Favorite.objects.get_or_create(user=request.user)
+        favorite.favorite.add(recipe)
         return Response(
             status=status.HTTP_201_CREATED,
             data=RecipePartSerializer(
                 recipe,
                 context={'request': request}).data
         )
-    favourite = Favourite.objects.filter(
+    favorite = Favorite.objects.filter(
         user=request.user,
-        favourite=recipe
+        favorite=recipe
     ).first()
-    if not favourite:
+    if not favorite:
         return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
-    favourite.favourite.remove(recipe)
-    if len(favourite.favourite.all()) == 0:
-        favourite.delete()
+    favorite.favorite.remove(recipe)
+    if not favorite.favorite.exists():
+        favorite.delete()
     return HttpResponse(status=status.HTTP_204_NO_CONTENT)
