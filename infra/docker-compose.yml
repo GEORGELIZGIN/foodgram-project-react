@@ -31,7 +31,6 @@ services:
     image: geo09/backend:latest
     restart: always
     volumes:
-      - ../data/:/app/data/
       - static_value:/app/django_static/
       - media_value:/app/django_media/
 

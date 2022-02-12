@@ -39,8 +39,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         tags_slugs = self.request.query_params.get('tags')
-        tags = Tag.objects.filter(slug__in=tags_slugs)
-        recipes = Recipe.objects.filter(tags__in=tags)
+        recipes = Recipe.objects.all()
+        if tags_slugs is not None:
+            tags = Tag.objects.filter(slug__in=list(tags_slugs))
+            recipes = recipes.objects.filter(tags__in=tags)
         favorited_recipes_ids = self._find_favorites_in_shopping_cart()
         shopping_cart_ids = self._find_recipes_in_shopping_cart()
         return recipes.filter(
