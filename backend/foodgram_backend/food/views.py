@@ -39,6 +39,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         tags_slugs = self.request.query_params.get('tags')
+        return HttpResponse(tags_slugs, status=status.HTTP_204_NO_CONTENT)
         print(tags_slugs)
         recipes = Recipe.objects.all()
         if tags_slugs is not None:
