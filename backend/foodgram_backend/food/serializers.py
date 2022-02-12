@@ -149,7 +149,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
         if image:
             instance.image = image
-            instance.save()
         if name:
             instance.name = name
         if text:
