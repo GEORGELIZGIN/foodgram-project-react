@@ -28,7 +28,7 @@ DEBUG = os.getenv('DEBUG')
 
 ALLOWED_HOSTS = ['*']
 
-# Application definition
+# Application definiton
 
 INSTALLED_APPS = [
     'django.contrib.admin',
