@@ -3,7 +3,7 @@ FROM python:3.8
 WORKDIR /app
 
 COPY requirements.txt .
-COPY ../../data/ingredients.json .
+COPY ./../../data .
 
 RUN pip3 install -r ./requirements.txt --no-cache-dir
 
