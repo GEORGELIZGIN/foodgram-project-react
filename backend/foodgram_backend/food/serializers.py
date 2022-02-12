@@ -155,7 +155,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             instance.text = text
         if cooking_time:
             instance.cooking_time = cooking_time
-        instance.save
+        instance.save()
         return instance
 
     def to_representation(self, instance):
