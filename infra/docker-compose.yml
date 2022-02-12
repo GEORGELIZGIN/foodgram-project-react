@@ -1,4 +1,4 @@
-version: '3.3'
+version: '3.7'
 services:
 
   frontend:
@@ -11,6 +11,7 @@ services:
     image: nginx:1.19.3
     ports:
       - "80:80"
+    restart: always
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
@@ -19,21 +20,23 @@ services:
 
       - static_value:/var/html/django_static/
 
-      - media_value:/var/html/djnago_media/
+      - media_value:/var/html/django_media/
     depends_on:
       - web
   db:
     image: postgres:13.0-alpine
     volumes:
-      - /var/lib/postgresql/data/
+      - postgres_data:/var/lib/postgresql/data/
     env_file:
       - ./.env
   web:
     build: ../backend/foodgram_backend
     restart: always
     volumes:
+      - ../data/:/app/data/
       - static_value:/app/django_static/
       - media_value:/app/django_media/
+
     depends_on:
       - db
     env_file:
@@ -42,3 +45,4 @@ services:
 volumes:
   static_value:
   media_value:
+  postgres_data:

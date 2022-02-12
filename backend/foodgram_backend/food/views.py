@@ -7,13 +7,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .filters import CustomSearchFilter, RecipeFilter
-from .models import (Favorite, Ingredient, Recipe,
-                     ShoppingCart, Tag)
-from .permissions import RecipePermissions
-from .serializers import (IngredientSerializer, RecipeCreateSerializer,
-                          RecipePartSerializer, RecipeSerializer,
-                          TagSerializer)
+from food.filters import CustomSearchFilter, RecipeFilter
+from food.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
+from food.permissions import RecipePermissions
+from food.serializers import (IngredientSerializer, RecipeCreateSerializer,
+                              RecipePartSerializer, RecipeSerializer,
+                              TagSerializer)
 
 CONTENT_TYPE = 'text/csv'
 HEADERS = {
@@ -36,55 +35,67 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = pagination.LimitOffsetPagination
     permission_classes = (RecipePermissions,)
+    filterset_class = RecipeFilter
 
     def get_queryset(self):
+        favorited_recipes_ids = self._find_favorites_in_shopping_cart()
+        shopping_cart_ids = self._find_recipes_in_shopping_cart()
+        return Recipe.objects.filter(
+            id__in=favorited_recipes_ids).filter(
+                id__in=shopping_cart_ids)
 
+    def _find_recipes_in_shopping_cart(self):
         is_in_shopping_cart = self.request.query_params.get(
             'is_in_shopping_cart')
-        is_favorited = self.request.query_params.get('is_favorited')
-
-        res = Recipe.objects.all()
         user = self.request.user
-
         if is_in_shopping_cart is not None:
 
             if is_in_shopping_cart == '1':
-                if user.is_anonymous:
+                if user.is_anonymous or not ShoppingCart.objects.filter(
+                    user=user
+                ).exists():
                     return Recipe.objects.none()
-                if ShoppingCart.objects.filter(user=user).exists():
-                    res = res.intersection(user.shoppingcart.cart.all())
-                else:
-                    return Recipe.objects.none()
+                return user.shoppingcart.cart.all().values_list(
+                    'id', flat=True)
 
             elif is_in_shopping_cart == '0':
                 if not user.is_anonymous:
                     if ShoppingCart.objects.filter(user=user).exists():
-                        res = res.difference(user.shoppingcart.cart.all())
+                        return Recipe.objects.exclude(
+                            id__in=user.shoppingcart.cart.all().values_list(
+                                'id', flat=True)).values_list('id', flat=True)
 
+        return Recipe.objects.all().values_list('id', flat=True)
+
+    def _find_favorites_in_shopping_cart(self):
+        is_favorited = self.request.query_params.get('is_favorited')
+        user = self.request.user
         if is_favorited is not None:
+
             if is_favorited == '1':
-                if user.is_anonymous:
+                if user.is_anonymous or not Favorite.objects.filter(
+                    user=user
+                ).exists():
                     return Recipe.objects.none()
-                if Favorite.objects.filter(user=user).exists():
-                    res = res.intersection(user.favorite.favorite.all())
-                else:
-                    return Recipe.objects.none()
+                return user.favorite.favorite.all().values_list(
+                    'id', flat=True)
+
             elif is_favorited == '0':
                 if not user.is_anonymous:
                     if Favorite.objects.filter(user=user).exists():
-                        res = res.difference(user.favorite.favorite.all())
-        return res
+                        return Recipe.objects.exclude(
+                            id__in=user.favorite.favorite.all().values_list(
+                                'id', flat=True
+                            )).values_list('id', flat=True)
 
-    filterset_class = RecipeFilter
+        return Recipe.objects.all().values_list('id', flat=True)
 
     def _is_favorited_or_is_in_shopping_cart(self, request):
 
         if request.user.is_anonymous:
-            is_favorited = False
-            is_in_shopping_cart = False
             return {
-                'is_favorited': is_favorited,
-                'is_in_shopping_cart': is_in_shopping_cart
+                'is_favorited': False,
+                'is_in_shopping_cart': False
             }
         return {}
 

@@ -1,14 +1,16 @@
 from django.contrib.auth import get_user_model
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from rest_framework import pagination, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from .models import Subscription
-from .serializers import SubscriptionSerializer
+from users.models import Subscription
+from users.serializers import SubscriptionSerializer
 
 User = get_user_model()
+
+CONTENT_TYPE = 'application/json'
 
 
 class SubscriptionViewSet(ReadOnlyModelViewSet):
@@ -37,8 +39,14 @@ def create_delete_subscription(request, id):
     if request.method == 'POST':
         if subscription:
             return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
-        Subscription.objects.create(follower=request.user, author=user)
-        return HttpResponse(status=status.HTTP_201_CREATED)
+        subscription = Subscription.objects.create(
+            follower=request.user, author=user)
+        serializer = SubscriptionSerializer(user, context={'request': request})
+        return JsonResponse(
+            serializer.data,
+            content_type=CONTENT_TYPE,
+            status=status.HTTP_201_CREATED,
+        )
     if not subscription:
         return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
     subscription.delete()

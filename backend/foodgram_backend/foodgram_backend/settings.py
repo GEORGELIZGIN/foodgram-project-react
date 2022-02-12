@@ -155,8 +155,15 @@ REST_FRAMEWORK = {
 
 DJOSER = {
     'USER_CREATE_PASSWORD_RETYPE': False,
+    'HIDE_USERS': False,
     'SERIALIZERS': {
         'user': 'users.serializers.UserSerializer',
         'current_user': 'users.serializers.UserSerializer',
+    },
+    'PERMISSIONS': {
+        'user': (
+            'rest_framework.permissions.IsAuthenticated',
+            'djoser.permissions.CurrentUserOrAdminOrReadOnly',
+        )
     },
 }

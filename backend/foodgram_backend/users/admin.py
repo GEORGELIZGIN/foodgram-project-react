@@ -2,8 +2,8 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .forms import UserChangeForm, UserCreationForm
-from .models import Subscription
+from users.forms import UserChangeForm, UserCreationForm
+from users.models import Subscription
 
 User = get_user_model()
 

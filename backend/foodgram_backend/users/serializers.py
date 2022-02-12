@@ -13,8 +13,8 @@ class UserSerializer(serializers.ModelSerializer):
     def get_is_subscribed(self, obj):
         if self.context['request'].user.is_anonymous:
             return False
-        if self.context['request'].user.followers.filter(
-            follower=obj
+        if self.context['request'].user.followings.filter(
+            author=obj
         ).exists():
             return True
         return False
@@ -48,4 +48,5 @@ class SubscriptionSerializer(UserSerializer):
         serialized_data = RecipePartSerializer(
             data=obj.recipes.all(),
             many=True)
+        serialized_data.is_valid()
         return serialized_data.data
