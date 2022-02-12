@@ -9,13 +9,10 @@ class CustomSearchFilter(filters.SearchFilter):
 
 
 class RecipeFilter(django_filters.FilterSet):
-    tags = django_filters.CharFilter(
-        field_name='tags__slug',
-        lookup_expr='contains')
     author = django_filters.NumberFilter(
         field_name='author__id',
         lookup_expr='exact')
 
     class Meta:
         model = Recipe
-        fields = ('tags', 'author')
+        fields = ('author',)
