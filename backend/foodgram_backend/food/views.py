@@ -34,7 +34,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = pagination.LimitOffsetPagination
-    permission_classes = (IsAuthenticated, RecipePermissions,)
+    permission_classes = (RecipePermissions,)
     filterset_class = RecipeFilter
 
     def get_queryset(self):
