@@ -115,6 +115,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return RecipeSerializer
 
     def perform_destroy(self, instance):
+        self.check_object_permissions(self.request, instance)
         instance.ingredients.all().delete()
         return super().perform_destroy(instance)
 
