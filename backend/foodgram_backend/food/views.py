@@ -1,10 +1,10 @@
 import csv
 
 from django.db.models import Sum
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from rest_framework import pagination, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from food.filters import CustomSearchFilter, RecipeFilter
@@ -34,7 +34,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = pagination.LimitOffsetPagination
-    permission_classes = (IsAuthenticatedOrReadOnly, RecipePermissions,)
+    permission_classes = (RecipePermissions,)
     filterset_class = RecipeFilter
 
     def get_queryset(self):
@@ -115,6 +115,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return RecipeSerializer
 
     def perform_destroy(self, instance):
+        if instance.author != self.request.user:
+            return JsonResponse({'detail': 'you do not have permissions to perform this action.'}, status=status.HTTP_403_FORBIDDEN)
         instance.ingredients.all().delete()
         return super().perform_destroy(instance)
 
