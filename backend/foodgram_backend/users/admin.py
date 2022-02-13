@@ -36,7 +36,8 @@ class UserAdmin(BaseUserAdmin):
 
 
 class SubscriptionAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('author', 'follower')
+    search_fields = ('author__email', 'follower__email')
 
 
 admin.site.register(User, UserAdmin)
