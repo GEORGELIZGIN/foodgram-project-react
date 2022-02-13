@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.http import HttpResponse, JsonResponse
 from rest_framework import pagination, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from users.models import Subscription
@@ -14,7 +14,7 @@ CONTENT_TYPE = 'application/json'
 
 
 class SubscriptionViewSet(ReadOnlyModelViewSet):
-    permission_classes = (IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAuthenticated,)
     pagination_class = pagination.LimitOffsetPagination
     serializer_class = SubscriptionSerializer
 
