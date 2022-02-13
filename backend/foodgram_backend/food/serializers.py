@@ -131,6 +131,12 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         text = validated_data.pop('text', None)
         cooking_time = validated_data.pop('cooking_time', None)
 
+        if cooking_time:
+            if int(cooking_time) < 0:
+                raise validators.ValidationError(
+                    'cooking time must be positive int')
+            instance.cooking_time = cooking_time
+
         if ingredients:
             instance.ingredients.clear()
             for ingr in ingredients:
@@ -153,8 +159,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             instance.name = name
         if text:
             instance.text = text
-        if cooking_time:
-            instance.cooking_time = cooking_time
         instance.save()
         return instance
 
