@@ -110,13 +110,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return context
 
     def get_serializer_class(self):
-        if self.action == 'create' or self.action == 'partial_update' or self.action == 'destroy':
+        if self.action == 'create' or self.action == 'partial_update':
             return RecipeCreateSerializer
         return RecipeSerializer
 
-    def perform_destroy(self, instance):
-        instance.ingredients.all().delete()
-        instance.delete()
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.ingredients.delete()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
