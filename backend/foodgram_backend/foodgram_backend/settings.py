@@ -162,7 +162,7 @@ DJOSER = {
     },
     'PERMISSIONS': {
         'user': (
-            'djoser.permissions.CurrentUserOrAdminOrReadOnly',
+            'rest_framework.permissions.IsAuthenticatedOrReadOnly',
         )
     },
 }
