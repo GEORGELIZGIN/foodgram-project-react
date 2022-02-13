@@ -110,12 +110,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return context
 
     def get_serializer_class(self):
-        if self.action == 'create' or self.action == 'partial_update':
+        if self.action == 'create' or self.action == 'partial_update' or self.action == 'destroy':
             return RecipeCreateSerializer
         return RecipeSerializer
 
     def perform_destroy(self, instance):
-        self.check_object_permissions(self.request, instance)
         instance.ingredients.all().delete()
         return super().perform_destroy(instance)
 
