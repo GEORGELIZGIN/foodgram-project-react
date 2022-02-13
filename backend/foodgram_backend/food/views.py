@@ -116,7 +116,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         instance.ingredients.all().delete()
-        return super().perform_destroy(instance)
+        instance.delete()
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
