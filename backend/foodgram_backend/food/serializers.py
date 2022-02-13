@@ -133,6 +133,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
         if ingredients:
             instance.ingredients.clear()
+            instance.save()
             for ingr in ingredients:
                 ingredient = IngredientWithAmount.objects.create(
                     amount=ingr['amount'],
