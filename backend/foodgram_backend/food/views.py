@@ -1,7 +1,7 @@
 import csv
 
 from django.db.models import Sum
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from rest_framework import pagination, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -114,11 +114,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeCreateSerializer
         return RecipeSerializer
 
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
+    
+    def perform_destroy(self, instance):
         instance.ingredients.delete()
-        self.perform_destroy(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return super().perform_destroy(instance)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
