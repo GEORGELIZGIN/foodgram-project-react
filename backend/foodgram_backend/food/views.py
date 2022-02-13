@@ -40,8 +40,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         tags_slugs = self.request.query_params.getlist('tags')
         recipes = Recipe.objects.all()
-        if not tags_slugs or self.action == 'retrieve':
-            return Recipe.objects.none()
         if tags_slugs:
             tags = Tag.objects.filter(slug__in=tags_slugs)
             recipes = recipes.filter(tags__in=tags).distinct('id')
