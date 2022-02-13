@@ -115,8 +115,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return RecipeSerializer
 
     def perform_destroy(self, instance):
-        if self.request.user != instance.author:
-            return JsonResponse([{'detail': 'You do not have permission to perform this action.'}], status=status.HTTP_403_FORBIDDEN)
         instance.ingredients.all().delete()
         return super().perform_destroy(instance)
 
