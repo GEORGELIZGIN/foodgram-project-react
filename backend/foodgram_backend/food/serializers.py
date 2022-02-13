@@ -34,10 +34,10 @@ class IngredientWithAmountSerializer(serializers.BaseSerializer):
             int(amount)
         except ValueError:
             raise serializers.ValidationError({
-                'amount':['amount must be positive int']})
+                'amount': ['amount must be positive int']})
         if int(amount) <= 0:
             raise serializers.ValidationError({
-                'amount':['amount must be positive int']})
+                'amount': ['amount must be positive int']})
         if not amount:
             raise serializers.ValidationError({
                 'amount': 'This field is required.'

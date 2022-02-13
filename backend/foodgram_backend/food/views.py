@@ -114,7 +114,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeCreateSerializer
         return RecipeSerializer
 
-    
     def perform_destroy(self, instance):
         instance.ingredients.delete()
         return super().perform_destroy(instance)
