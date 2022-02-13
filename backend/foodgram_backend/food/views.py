@@ -1,7 +1,7 @@
 import csv
 
 from django.db.models import Sum
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from rest_framework import pagination, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -115,6 +115,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return RecipeSerializer
 
     def perform_destroy(self, instance):
+        if self.request.user != instance.author:
+            return JsonResponse({"detail": '"You do not have permission to perform this action."'}, status=status.HTTP_403_FORBIDDEN)
         instance.ingredients.all().delete()
         return super().perform_destroy(instance)
 
