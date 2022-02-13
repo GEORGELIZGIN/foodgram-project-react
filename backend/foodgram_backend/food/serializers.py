@@ -132,8 +132,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         cooking_time = validated_data.pop('cooking_time', None)
 
         if ingredients:
-            instance.ingredients.clear()
-            instance.save()
+            instance.ingredients.all().delete()
             for ingr in ingredients:
                 ingredient = IngredientWithAmount.objects.create(
                     amount=ingr['amount'],
