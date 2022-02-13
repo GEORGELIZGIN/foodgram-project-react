@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from food.validators import validate_tag_color
 
 User = get_user_model()
 
@@ -68,7 +69,8 @@ class Tag(models.Model):
         max_length=7,
         null=True,
         verbose_name='цвет',
-        help_text='цвет в формате HEX')
+        help_text='цвет в формате HEX',
+        validators=(validate_tag_color,))
     slug = models.SlugField(
         max_length=200, null=True,
         verbose_name='слаг', help_text='слаг')
