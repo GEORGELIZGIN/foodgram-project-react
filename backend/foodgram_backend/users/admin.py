@@ -15,7 +15,6 @@ class UserAdmin(BaseUserAdmin):
         'email', 'username',
         'first_name', 'last_name',
         'is_superuser', 'id')
-    list_filter = ('email', 'username')
     fieldsets = (
         (None, {'fields': ('email', 'password', 'username')}),
         ('Personal info', {'fields': ('first_name', 'last_name')}),
@@ -37,6 +36,7 @@ class UserAdmin(BaseUserAdmin):
 
 class SubscriptionAdmin(admin.ModelAdmin):
     list_display = ('author', 'follower')
+    list_filter = ('author__email', 'follower__email')
     search_fields = ('author__email', 'follower__email')
 
 

@@ -18,7 +18,10 @@ class IngredientAdmin(admin.ModelAdmin):
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'author', 'fav', 'cart')
     list_filter = ('author__email', 'tags__slug')
-    search_fields = ('author__email', 'ingredients__ingredient__name')
+    search_fields = (
+        'author__email', 'author__username',
+        'author__first_name', 'author__last_name',
+        'ingredients__ingredient__name')
 
     @admin.display(description='Число добавлений в избранное')
     def fav(self, obj):
@@ -38,12 +41,17 @@ class IngredientWithAmountAdmin(admin.ModelAdmin):
 
 class FavoriteAdmin(admin.ModelAdmin):
     list_display = ('id', 'user')
-    search_fields = ('user__email',)
+    search_fields = (
+        'user__email', 'user__username',
+        'user__first_name', 'user__last_name')
 
 
 class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = ('id', 'user')
-    search_fields = ('user__email', 'cart__name')
+    search_fields = (
+        'user__email', 'user__username',
+        'user__first_name', 'user__last_name',
+        'cart__name')
 
 
 admin.site.register(Tag, TagAdmin)
