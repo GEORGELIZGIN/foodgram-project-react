@@ -39,8 +39,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         tags_slugs = self.request.query_params.getlist('tags')
-        if not tags_slugs:
-            return Recipe.objects.none()
         recipes = Recipe.objects.all()
         if tags_slugs:
             tags = Tag.objects.filter(slug__in=tags_slugs)
