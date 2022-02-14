@@ -31,7 +31,7 @@ class UserAdmin(BaseUserAdmin):
     )
     search_fields = ('email',)
     ordering = ('email',)
-    search_fields = ()
+    list_filter = ()
     filter_horizontal = ()
 
 
