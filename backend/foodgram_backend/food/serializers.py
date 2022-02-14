@@ -107,7 +107,9 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         if not ingredients:
             raise validators.ValidationError(
                 'list of ingredients cannot be empty')
-        if len([x['id'] for x in ingredients]) != len({x['id'] for x in ingredients}):
+        if len([x['id'] for x in ingredients]) != len(
+            {x['id'] for x in ingredients}
+        ):
             raise validators.ValidationError(
                 'repeating equal ingredients')
         recipe = Recipe.objects.create(
@@ -137,6 +139,11 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         cooking_time = validated_data.pop('cooking_time', None)
 
         if ingredients:
+            if len([x['id'] for x in ingredients]) != len(
+                {x['id'] for x in ingredients}
+            ):
+                raise validators.ValidationError(
+                    'repeating equal ingredients')
             instance.ingredients.all().delete()
             for ingr in ingredients:
                 ingredient = IngredientWithAmount.objects.create(
