@@ -28,7 +28,7 @@ DEBUG = True if os.getenv('DEBUG') == 'True' else False
 
 ALLOWED_HOSTS = [
     'web', 'db', '127.0.0.1', '62.84.123.12', '172.18.0.2',
-    'foodgramm.sytes.net'
+    'foodgramm.myddns.me'
 ]
 
 # Application definiton
