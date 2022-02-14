@@ -3,7 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from rest_framework import pagination, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.viewsets import ModelViewSet
 
 from users.models import Subscription
 from users.serializers import SubscriptionSerializer
@@ -17,7 +17,7 @@ class CustomPaginator(pagination.PageNumberPagination):
     page_size_query_param = 'limit'
 
 
-class SubscriptionViewSet(ReadOnlyModelViewSet):
+class SubscriptionViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated,)
     pagination_class = CustomPaginator
     serializer_class = SubscriptionSerializer
