@@ -33,16 +33,10 @@ class Recipe(models.Model):
         'Tag',
         verbose_name='тэги',
         help_text='тэги поиска рецептов')
-    
-    pub_date = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name = 'дата'
-    )
 
     class Meta:
         verbose_name = 'рецепт'
         verbose_name_plural = 'рецепты'
-        ordering = ['-pub_date']
 
     def __str__(self):
         return self.name
