@@ -20,6 +20,11 @@ HEADERS = {
 }
 
 
+class CustomPaginator(pagination.PageNumberPagination):
+    page_query_param = 'page'
+    page_size_query_param = 'limit'
+
+
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
@@ -33,7 +38,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    pagination_class = pagination.LimitOffsetPagination
+    pagination_class = CustomPaginator
     permission_classes = (RecipePermissions,)
     filterset_class = RecipeFilter
 
