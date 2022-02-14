@@ -45,14 +45,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
             recipes = recipes.filter(tags__in=tags).distinct('id')
         favorited_recipes_ids = self._find_favorites_in_shopping_cart()
         shopping_cart_ids = self._find_recipes_in_shopping_cart()
-        return recipes.filter(
+        qs = recipes.filter(
             id__in=favorited_recipes_ids).filter(
                 id__in=shopping_cart_ids)
-    
-    def get(self, request, *args, **kwargs):
-        qs = self.get_queryset()
         page = self.paginate_queryset(qs)
         return self.get_paginated_response(page)
+
 
     def _find_recipes_in_shopping_cart(self):
         is_in_shopping_cart = self.request.query_params.get(
