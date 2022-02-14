@@ -45,10 +45,10 @@ class SubscriptionSerializer(UserSerializer):
         ) + ('is_subscribed', 'recipes')
 
     def get_recipes(self, obj):
-        recipe_limit = self.context.get('request').query_params.get('recipe_limit')
-        if recipe_limit:
-            serialized_data = RecipePartSerializer(
-                data=obj.recipes.all()[:int(recipe_limit)],
-                many=True)
-            serialized_data.is_valid()
-            return serialized_data.data
+
+        serialized_data = RecipePartSerializer(
+            data=obj.recipes.all(),
+            many=True)
+        serialized_data.is_valid()
+        return serialized_data.data
+        

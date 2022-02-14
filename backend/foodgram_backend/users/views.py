@@ -12,10 +12,14 @@ User = get_user_model()
 
 CONTENT_TYPE = 'application/json'
 
+class CustomPaginator(pagination.PageNumberPagination):
+    page_query_param = 'page'
+    page_size_query_param = 'limit'
+
 
 class SubscriptionViewSet(ReadOnlyModelViewSet):
     permission_classes = (IsAuthenticated,)
-    pagination_class = pagination.LimitOffsetPagination
+    pagination_class = CustomPaginator
     serializer_class = SubscriptionSerializer
 
     def get_queryset(self):
